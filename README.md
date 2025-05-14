@@ -25,8 +25,3 @@ pip install -r requirements.txt
 ```python
 python -m src.main
 ```
-### Step 6: Create a Basic requirements.txt File
-Core dependencies
-numpy==1.24.3
-matplotlib==3.7.1  # For visualization
-pytest==7.3.1      # For testing
