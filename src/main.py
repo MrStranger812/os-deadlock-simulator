@@ -86,7 +86,7 @@ def main():
     
     # Initialize components
     detector = DeadlockDetector(system)
-    resolver = DeadlockResolver(system)
+    resolver = DeadlockResolver(system,detector)
     visualizer = DeadlockVisualizer(system)
     
     # Print initial state
@@ -116,7 +116,7 @@ def main():
         if is_deadlocked:
             print(f"Deadlock detected! Processes involved: {deadlocked_processes}")
             print("Resolving deadlock...")
-            resolver.resolve_by_process_termination(deadlocked_processes)
+            resolver._resolve_by_termination(deadlocked_processes,priority_based=False)
         
         # Print system status
         print_system_status(system)
