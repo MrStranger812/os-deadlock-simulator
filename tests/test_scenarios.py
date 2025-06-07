@@ -9,7 +9,7 @@ of the deadlock detection and resolution algorithms.
 from src.core import Process, Resource, System
 from src.detection import DeadlockDetector
 from src.resolution import DeadlockResolver
-# from src.visualization import DeadlockVisualizer
+from src.visualization.visualizer import DeadlockVisualizer
 def create_simple_deadlock():
     """
     Create a simple deadlock scenario with two processes and two resources.
@@ -229,7 +229,7 @@ def create_chain_deadlock():
 
 
 
-def run_test_scenario(scenario_func, scenario_name="", test_both_algorithms=True, visualize=False):
+def run_test_scenario(scenario_func, scenario_name="", test_both_algorithms=True, visualize=False, viz_types=None):
     """
     Run a test scenario and report the results.
     
@@ -238,7 +238,13 @@ def run_test_scenario(scenario_func, scenario_name="", test_both_algorithms=True
         scenario_name: Name of the scenario for reporting
         test_both_algorithms: Whether to test both detection algorithms
         visualize: Whether to show visualizations
-        
+        viz_types: List of visualization types to show. Options:
+            - 'rag': Resource Allocation Graph
+            - 'state': System State
+            - 'detection': Deadlock Detection Steps
+            - 'resolution': Resolution Steps
+            - 'all': All visualizations
+    
     Returns:
         dict: Test results containing detection results and system state
     """
@@ -251,10 +257,14 @@ def run_test_scenario(scenario_func, scenario_name="", test_both_algorithms=True
     
     # Initialize components
     detector = DeadlockDetector(system)
-    resolver = DeadlockResolver(system,detector)
+    resolver = DeadlockResolver(system, detector)
     
     if visualize:
         visualizer = DeadlockVisualizer(system)
+        if viz_types is None:
+            viz_types = ['all']
+        elif isinstance(viz_types, str):
+            viz_types = [viz_types]
     
     # Print initial system state
     print("\n--- Initial System State ---")
@@ -296,6 +306,7 @@ def run_test_scenario(scenario_func, scenario_name="", test_both_algorithms=True
         
         # Test different resolution strategies
         resolution_results = {}
+        resolution_steps = []
         
         # Create copies of the system for testing different resolution strategies
         original_state = save_system_state(system)
@@ -303,41 +314,76 @@ def run_test_scenario(scenario_func, scenario_name="", test_both_algorithms=True
         # Test process termination
         print("\n🔥 Testing Process Termination Strategy:")
         restore_system_state(system, original_state)
-        termination_success = resolver._resolve_by_termination(rag_processes.copy(),priority_based=False)
+        termination_success = resolver._resolve_by_termination(rag_processes.copy(), priority_based=False)
         resolution_results["termination"] = {
             "success": termination_success,
             "final_state": get_system_state_summary(system)
         }
+        resolution_steps.append({
+            "strategy": "termination",
+            "success": termination_success,
+            "state": get_system_state_summary(system)
+        })
         
         # Test resource preemption
         print("\n🔄 Testing Resource Preemption Strategy:")
         restore_system_state(system, original_state)
-        preemption_success = resolver._resolve_by_preemption(rag_processes.copy(),priority_based=False)
+        preemption_success = resolver._resolve_by_preemption(rag_processes.copy(), priority_based=False)
         resolution_results["preemption"] = {
             "success": preemption_success,
             "final_state": get_system_state_summary(system)
         }
+        resolution_steps.append({
+            "strategy": "preemption",
+            "success": preemption_success,
+            "state": get_system_state_summary(system)
+        })
         
         # Test rollback
         print("\n🔙 Testing Rollback Strategy:")
         restore_system_state(system, original_state)
-        rollback_success = resolver._resolve_by_rollback(rag_processes.copy(),priority_based=False)
+        rollback_success = resolver._resolve_by_rollback(rag_processes.copy(), priority_based=False)
         resolution_results["rollback"] = {
             "success": rollback_success,
             "final_state": get_system_state_summary(system)
         }
+        resolution_steps.append({
+            "strategy": "rollback",
+            "success": rollback_success,
+            "state": get_system_state_summary(system)
+        })
         
         results["resolution_results"] = resolution_results
+        results["resolution_steps"] = resolution_steps
     
     # Show visualizations if requested
     if visualize and 'visualizer' in locals():
         print("\n--- Generating Visualizations ---")
-        visualizer.draw_resource_allocation_graph()
-        visualizer.draw_system_state()
+        
+        if 'all' in viz_types or 'rag' in viz_types:
+            print("\nVisualizing Resource Allocation Graph...")
+            visualizer.draw_resource_allocation_graph()
+        
+        if 'all' in viz_types or 'state' in viz_types:
+            print("\nVisualizing System State...")
+            visualizer.draw_system_state()
+        
+        if 'all' in viz_types or 'detection' in viz_types:
+            print("\nVisualizing Deadlock Detection Steps...")
+            detection_steps = []
+            if rag_deadlocked:
+                detection_steps.append({
+                    "marked_processes": set(rag_processes),
+                    "explanation": "Deadlock detected in processes: " + str(rag_processes)
+                })
+            visualizer.visualize_detection_steps(detection_steps)
+        
+        if 'all' in viz_types or 'resolution' in viz_types:
+            if rag_deadlocked and 'resolution_steps' in results:
+                print("\nVisualizing Resolution Steps...")
+                visualizer.visualize_resolution_steps(results["resolution_steps"])
     
     # Print final summary
-
-
     print(f"\n--- Test Summary for {scenario_name or scenario_func.__name__} ---")
     if rag_deadlocked:
         print(f"🔴 Deadlock detected involving processes: {rag_processes}")
@@ -346,13 +392,19 @@ def run_test_scenario(scenario_func, scenario_name="", test_both_algorithms=True
     
     return results
 
-def run_all_test_scenarios(visualize=False):
+def run_all_test_scenarios(visualize=False, viz_types=None):
     """
     Run all predefined test scenarios.
     
     Args:
         visualize: Whether to show visualizations for each test
-        
+        viz_types: List of visualization types to show. Options:
+            - 'rag': Resource Allocation Graph
+            - 'state': System State
+            - 'detection': Deadlock Detection Steps
+            - 'resolution': Resolution Steps
+            - 'all': All visualizations
+    
     Returns:
         list: List of all test results
     """
@@ -375,7 +427,9 @@ def run_all_test_scenarios(visualize=False):
     for scenario_func, scenario_name in scenarios:
         try:
             results = run_test_scenario(scenario_func, scenario_name, 
-                                      test_both_algorithms=True, visualize=visualize)
+                                      test_both_algorithms=True, 
+                                      visualize=visualize,
+                                      viz_types=viz_types)
             all_results.append(results)
         except Exception as e:
             print(f"❌ Error in scenario {scenario_name}: {str(e)}")
@@ -489,10 +543,6 @@ def restore_system_state(system, saved_state):
 
 # Main execution for testing
 if __name__ == "__main__":
-    # Run a quick test
-    # print("Running quick deadlock simulation test...")
-    # results = run_test_scenario(create_simple_deadlock, "Quick Test", visualize=False)
-    
-    # Uncomment the line below to run all scenarios
-    run_all_test_scenarios(visualize=False)
+    # Run all scenarios with specific visualizations
+    run_all_test_scenarios(visualize=True, viz_types=['rag', 'state', 'detection', 'resolution'])
 
