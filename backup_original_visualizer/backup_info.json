@@ -1,0 +1,10 @@
+{
+  "timestamp": "/home/sinatk/development/OS/os-deadlock-simulator",
+  "original_files": [
+    "src/visualization/visualizer.py",
+    "src/visualization/__init__.py",
+    "src/main.py",
+    "requirements.txt"
+  ],
+  "purpose": "Backup before enhanced visualizer installation"
+}

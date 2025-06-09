@@ -1,0 +1,13 @@
+# Core dependencies
+numpy==1.24.3
+matplotlib==3.7.1
+networkx==3.1
+pytest==7.3.1
+
+# Optional dependencies
+pandas==2.0.1  # For data processing
+#visualization
+plotly==5.17.0
+dash==2.14.1
+kaleido==0.2.1  # For static image export
+psutil==5.9.5   # For performance monitoring

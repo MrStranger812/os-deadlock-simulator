@@ -6,9 +6,6 @@ This module provides a command-line interface for running
 deadlock simulation scenarios.  
 """
 
-import matplotlib
-matplotlib.use('TkAgg')  # Set the backend before importing pyplot
-
 import sys
 import argparse
 import os
@@ -169,7 +166,6 @@ def get_state_description(system, deadlocked_processes=None):
         return f"processes_terminated_P{'_'.join(map(str, terminated_processes))}"
     
     return "all_processes_running"
-
 def main():
     parser = argparse.ArgumentParser(description="Enhanced Deadlock Simulator")
     parser.add_argument("--scenario", choices=["simple", "dining", "custom"], 
