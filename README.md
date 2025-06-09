@@ -8,7 +8,7 @@ This project implements a simulation environment to:
 - Allocate and manage system resources
 - Detect deadlock situations using resource allocation graphs
 - Implement strategies to resolve deadlocks
-- Visualize system states and deadlock scenarios
+- Visualize system states and deadlock scenarios with enhanced capabilities
 - Test various deadlock scenarios and resolution strategies
 
 ## Features
@@ -22,6 +22,15 @@ This project implements a simulation environment to:
   - Resource Preemption
   - Process Rollback
   - Priority-based resolution
+
+- **Enhanced Visualization Capabilities**
+  - Dynamic animations and transitions
+  - Multiple layout algorithms (Spring, Circular, Hierarchical, Grid)
+  - Real-time system state updates
+  - Interactive web-based dashboard
+  - Professional color themes with accessibility support
+  - Performance monitoring and metrics
+  - Multiple export formats (PNG, GIF, MP4, HTML)
 
 - **Test Scenarios**
   1. **Simple Two-Process Deadlock**
@@ -48,12 +57,6 @@ This project implements a simulation environment to:
      - Multiple processes in a chain
      - Demonstrates extended deadlock patterns
      - Tests resolution strategies
-
-- **Visualization Tools**
-  - Resource Allocation Graph visualization
-  - System state visualization
-  - Deadlock detection steps
-  - Resolution path visualization
 
 ## Team Members
 - [Member 1] - Project Manager/Core Developer
@@ -107,10 +110,37 @@ Available scenarios:
 - `no-deadlock`: No Deadlock Scenario
 - `chain`: Chain Deadlock
 
-### Running the Main Simulator
+### Running the Main Simulator with Enhanced Visualization
 ```bash
+# Basic visualization
 python -m src.main
+
+# Enhanced visualization with specific options
+python -m src.main --layout spring --theme dark --animation pulse --web
+
+# Export visualization
+python -m src.main --export-format gif --export-path output.gif
 ```
+
+Available visualization options:
+- Layouts: `spring`, `circular`, `hierarchical`, `grid`
+- Themes: `light`, `dark`, `high-contrast`, `colorblind`, `educational`, `professional`
+- Animations: `fade`, `pulse`, `bounce`, `rotate`, `glow`, `shake`, `spiral`, `wave`
+- Export formats: `png`, `gif`, `mp4`, `html`
+
+### Web Dashboard
+The simulator includes an interactive web dashboard for real-time visualization:
+```bash
+python -m src.main --web
+```
+Access the dashboard at http://localhost:8050
+
+Features:
+- Interactive resource allocation graph
+- Real-time system metrics
+- Customizable layout and theme
+- Export functionality
+- Performance monitoring
 
 ## Test Results Interpretation
 - 🔴 Deadlock detected: System is in a deadlock state
@@ -126,10 +156,18 @@ os-deadlock-simulator/
 │   ├── core/           # Core system components
 │   ├── detection/      # Deadlock detection algorithms
 │   ├── resolution/     # Deadlock resolution strategies
-│   └── visualization/  # Visualization tools
+│   └── visualization/  # Enhanced visualization tools
+│       ├── animation_utils.py    # Animation utilities
+│       ├── themes.py            # Theme management
+│       ├── visualizer.py        # Core visualization
+│       └── web_visualizer.py    # Web dashboard
 ├── tests/
 │   ├── test_scenarios.py  # Test scenarios
 │   └── __init__.py
+├── examples/
+│   ├── basic_usage.py
+│   ├── advanced_features.py
+│   └── web_dashboard.py
 ├── requirements.txt
 └── README.md
 ```
