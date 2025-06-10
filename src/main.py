@@ -3,20 +3,17 @@
 Enhanced Deadlock Simulator - Main Entry Point
 
 This module provides a comprehensive command-line interface for running
-deadlock simulation scenarios with advanced visualization capabilities.
+deadlock simulation scenarios with clean, educational visualizations.
 
 Usage Examples:
-    # Basic usage
+    # Run all scenarios with educational output
+    python -m src.main --all-scenarios --educational
+    
+    # Run specific scenario with visualization
     python -m src.main --scenario simple --visualize
     
-    # Enhanced features
-    python -m src.main --scenario dining-5 --enhanced --layout circular --theme dark
-    
-    # Web dashboard
-    python -m src.main --web --port 8080
-    
-    # Export animation
-    python -m src.main --scenario simple --enhanced --export gif --output-dir ./results
+    # Generate comprehensive educational materials
+    python -m src.main --educational-session --output-dir ./presentation_materials
 """
 
 import sys
@@ -35,34 +32,20 @@ from src.core import Process, Resource, System
 from src.detection import DeadlockDetector
 from src.resolution import DeadlockResolver
 
-# Import visualization with graceful fallback
+# Import visualization
 try:
-    from src.visualization import (
-        DeadlockVisualizer,
-        create_visualizer,
-        get_available_features,
-        print_feature_summary,
-        LayoutType,
-        AnimationType,
-        ColorThemes
-    )
+    from src.visualization.educational_visualizer import EducationalVisualizer as DeadlockVisualizer
     VISUALIZATION_AVAILABLE = True
-except ImportError as e:
-    print(f"⚠️ Visualization not available: {e}")
-    print("Install dependencies with: pip install matplotlib networkx")
+except ImportError:
     VISUALIZATION_AVAILABLE = False
+    DeadlockVisualizer = None
 
 # =============================================================================
 # SCENARIO CREATION FUNCTIONS
 # =============================================================================
 
 def create_simple_scenario():
-    """
-    Create a simple deadlock scenario with two processes and two resources.
-    
-    Returns:
-        System: A system object configured with the scenario
-    """
+    """Create a simple deadlock scenario with two processes and two resources."""
     system = System()
     
     # Create processes
@@ -86,15 +69,7 @@ def create_simple_scenario():
     return system
 
 def create_dining_philosophers(num_philosophers=5):
-    """
-    Create dining philosophers scenario.
-    
-    Args:
-        num_philosophers: Number of philosophers (default=5)
-    
-    Returns:
-        System: A system object configured with the scenario
-    """
+    """Create dining philosophers scenario."""
     system = System()
     
     # Create philosophers (processes)
@@ -125,12 +100,7 @@ def create_dining_philosophers(num_philosophers=5):
     return system
 
 def create_complex_scenario():
-    """
-    Create complex resource allocation scenario.
-    
-    Returns:
-        System: A system object configured with the scenario
-    """
+    """Create complex resource allocation scenario."""
     system = System()
     
     # Create processes
@@ -170,48 +140,12 @@ def create_complex_scenario():
     
     return system
 
-def create_no_deadlock_scenario():
-    """
-    Create scenario with no deadlock (for false positive testing).
-    
-    Returns:
-        System: A system object configured with the scenario
-    """
-    system = System()
-    
-    # Create processes
-    for i in range(1, 4):
-        p = Process(i)
-        system.add_process(p)
-    
-    # Create resources with sufficient instances
-    for i in range(1, 4):
-        r = Resource(i, instances=2)
-        system.add_resource(r)
-    
-    # Allocate resources without creating deadlock
-    system.processes[1].request_resource(system.resources[1])
-    system.processes[2].request_resource(system.resources[2])
-    system.processes[3].request_resource(system.resources[3])
-    
-    # These requests can be satisfied
-    system.processes[1].request_resource(system.resources[2])
-    system.processes[2].request_resource(system.resources[3])
-    system.processes[3].request_resource(system.resources[1])
-    
-    return system
-
 # =============================================================================
 # UTILITY FUNCTIONS
 # =============================================================================
 
 def print_system_status(system):
-    """
-    Print detailed system status.
-    
-    Args:
-        system: The system to print status for
-    """
+    """Print detailed system status."""
     print(f"\n{'='*60}")
     print("📊 SYSTEM STATUS")
     print(f"{'='*60}")
@@ -241,35 +175,8 @@ def print_system_status(system):
     
     print(f"{'='*60}")
 
-def create_output_directory(base_dir=None):
-    """Create output directory with timestamp."""
-    if base_dir:
-        output_dir = Path(base_dir)
-    else:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_dir = Path(f"deadlock_simulation_{timestamp}")
-    
-    output_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Create subdirectories
-    (output_dir / "visualizations").mkdir(exist_ok=True)
-    (output_dir / "reports").mkdir(exist_ok=True)
-    (output_dir / "logs").mkdir(exist_ok=True)
-    
-    return output_dir
-
 def detect_and_analyze_deadlock(system, visualizer=None, verbose=True):
-    """
-    Detect and analyze deadlock with comprehensive reporting.
-    
-    Args:
-        system: The system to analyze
-        visualizer: Optional visualizer for output
-        verbose: Whether to print detailed output
-        
-    Returns:
-        dict: Analysis results
-    """
+    """Detect and analyze deadlock with comprehensive reporting."""
     if verbose:
         print(f"\n🔍 DEADLOCK DETECTION ANALYSIS")
         print(f"{'-'*40}")
@@ -328,119 +235,16 @@ def detect_and_analyze_deadlock(system, visualizer=None, verbose=True):
     results['final'] = {'deadlocked': final_deadlocked, 'processes': final_processes}
     return results
 
-def resolve_deadlock_comprehensive(system, deadlocked_processes, verbose=True):
-    """
-    Attempt comprehensive deadlock resolution.
+def create_output_directory(base_dir=None):
+    """Create output directory with timestamp."""
+    if base_dir:
+        output_dir = Path(base_dir)
+    else:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_dir = Path(f"deadlock_simulation_{timestamp}")
     
-    Args:
-        system: The system with deadlock
-        deadlocked_processes: List of deadlocked process IDs
-        verbose: Whether to print detailed output
-        
-    Returns:
-        dict: Resolution results
-    """
-    if verbose:
-        print(f"\n🛠️ DEADLOCK RESOLUTION")
-        print(f"{'-'*40}")
-    
-    detector = DeadlockDetector(system)
-    resolver = DeadlockResolver(system, detector)
-    
-    # Test different resolution strategies
-    strategies = ['termination', 'preemption', 'rollback']
-    results = {}
-    
-    for strategy in strategies:
-        if verbose:
-            print(f"\n🔧 Testing {strategy.title()} Strategy:")
-        
-        # Save system state
-        original_state = _save_system_state(system)
-        
-        try:
-            if strategy == 'termination':
-                success = resolver._resolve_by_termination(deadlocked_processes.copy(), priority_based=False)
-            elif strategy == 'preemption':
-                success = resolver._resolve_by_preemption(deadlocked_processes.copy(), priority_based=False)
-            elif strategy == 'rollback':
-                success = resolver._resolve_by_rollback(deadlocked_processes.copy(), priority_based=False)
-            
-            results[strategy] = {
-                'success': success,
-                'final_state': _capture_system_state(system)
-            }
-            
-            if verbose:
-                if success:
-                    print(f"   ✅ {strategy.title()} successful!")
-                else:
-                    print(f"   ❌ {strategy.title()} failed!")
-        
-        except Exception as e:
-            if verbose:
-                print(f"   ❌ {strategy.title()} error: {e}")
-            results[strategy] = {'success': False, 'error': str(e)}
-        
-        # Restore original state for next test
-        _restore_system_state(system, original_state)
-    
-    return results
-
-def _save_system_state(system):
-    """Save current system state."""
-    return {
-        'time': system.time,
-        'processes': {
-            pid: {
-                'status': p.status,
-                'held': [r.rid for r in p.resources_held],
-                'requested': [r.rid for r in p.resources_requested]
-            } for pid, p in system.processes.items()
-        },
-        'resources': {
-            rid: {
-                'available': r.available_instances,
-                'allocated': dict(r.allocated_to)
-            } for rid, r in system.resources.items()
-        }
-    }
-
-def _restore_system_state(system, state):
-    """Restore system to saved state."""
-    system.time = state['time']
-    
-    # Restore processes
-    for pid, pdata in state['processes'].items():
-        if pid in system.processes:
-            process = system.processes[pid]
-            process.status = pdata['status']
-            process.resources_held.clear()
-            process.resources_requested.clear()
-            
-            for rid in pdata['held']:
-                if rid in system.resources:
-                    process.resources_held.append(system.resources[rid])
-            
-            for rid in pdata['requested']:
-                if rid in system.resources:
-                    process.resources_requested.append(system.resources[rid])
-    
-    # Restore resources
-    for rid, rdata in state['resources'].items():
-        if rid in system.resources:
-            resource = system.resources[rid]
-            resource.available_instances = rdata['available']
-            resource.allocated_to = dict(rdata['allocated'])
-
-def _capture_system_state(system):
-    """Capture current system state summary."""
-    return {
-        'processes': len(system.processes),
-        'resources': len(system.resources),
-        'waiting': sum(1 for p in system.processes.values() if p.status == 'WAITING'),
-        'terminated': sum(1 for p in system.processes.values() if p.status == 'TERMINATED')
-    }
+    output_dir.mkdir(parents=True, exist_ok=True)
+    return output_dir
 
 # =============================================================================
 # COMMAND LINE INTERFACE
@@ -449,216 +253,70 @@ def _capture_system_state(system):
 def create_parser():
     """Create command line argument parser."""
     parser = argparse.ArgumentParser(
-        description="Enhanced Deadlock Simulator",
+        description="Educational Deadlock Simulator",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s --scenario simple --visualize
-  %(prog)s --scenario dining-5 --enhanced --layout circular --theme dark
-  %(prog)s --scenario complex --enhanced --export gif --output-dir ./results
+  %(prog)s --scenario simple --visualize                    # Basic scenario with visualization
+  %(prog)s --scenario dining-5 --visualize --save          # Dining philosophers with save
+  %(prog)s --all-scenarios --educational                    # All scenarios with educational output
+  %(prog)s --educational-session --output-dir ./materials   # Complete educational session
         """
     )
     
-    # Basic options
-    parser.add_argument("--scenario", 
-                       choices=["simple", "dining-3", "dining-5", "dining-7", "complex", "no-deadlock"],
-                       default="simple",
-                       help="Simulation scenario to run")
+    # Basic scenario options
+    scenario_group = parser.add_mutually_exclusive_group()
+    scenario_group.add_argument("--scenario", 
+                               choices=["simple", "dining-3", "dining-5", "dining-7", "complex"],
+                               help="Run specific simulation scenario")
+    scenario_group.add_argument("--all-scenarios", action="store_true",
+                               help="Run all available scenarios")
+    scenario_group.add_argument("--educational-session", action="store_true",
+                               help="Generate complete educational session with all materials")
     
+    # Visualization options
     parser.add_argument("--visualize", action="store_true",
-                       help="Enable basic visualization")
-    
-    parser.add_argument("--enhanced", action="store_true",
-                       help="Use enhanced visualization features")
-    
-    # Enhanced visualization options
-    if VISUALIZATION_AVAILABLE:
-        try:
-            layout_choices = [l.value for l in LayoutType]
-        except:
-            layout_choices = ["spring", "circular", "hierarchical", "grid"]
-            
-        try:
-            animation_choices = [a.value for a in AnimationType]
-        except:
-            animation_choices = ["fade", "pulse", "scale"]
-        
-        parser.add_argument("--layout", choices=layout_choices,
-                           default="spring", help="Layout algorithm")
-        
-        parser.add_argument("--theme", 
-                           choices=["default", "dark", "high_contrast", "colorblind", "educational"],
-                           default="default", help="Color theme")
-        
-        parser.add_argument("--animation", choices=animation_choices,
-                           default="fade", help="Animation type")
-        
-        parser.add_argument("--export", choices=["png", "gif", "mp4"],
-                           help="Export format")
+                       help="Enable visualization")
+    parser.add_argument("--save", action="store_true",
+                       help="Save visualization to file")
+    parser.add_argument("--educational", action="store_true",
+                       help="Generate educational materials and explanations")
     
     # Output options
     parser.add_argument("--output-dir", type=str,
                        help="Output directory for generated files")
-    
     parser.add_argument("--quiet", action="store_true",
                        help="Suppress detailed output")
     
-    parser.add_argument("--features", action="store_true",
-                       help="Show available features and exit")
-    
-    parser.add_argument("--demo", action="store_true",
-                       help="Run demonstration with all features")
+    # Educational options
+    parser.add_argument("--format", choices=["simple", "comprehensive"],
+                       default="simple",
+                       help="Output format complexity")
     
     return parser
 
-def run_demonstration():
-    """Run a comprehensive demonstration of all features."""
-    print("🎯 DEADLOCK SIMULATOR DEMONSTRATION")
-    print("=" * 60)
-    
-    scenarios = [
-        ("simple", "Simple Two-Process Deadlock"),
-        ("dining-5", "Dining Philosophers (5)"),
-        ("complex", "Complex Multi-Resource")
-    ]
-    
-    for scenario_name, description in scenarios:
-        print(f"\n📋 Running: {description}")
-        print("-" * 40)
-        
-        # Create system
-        if scenario_name == "simple":
-            system = create_simple_scenario()
-        elif scenario_name == "dining-5":
-            system = create_dining_philosophers(5)
-        elif scenario_name == "complex":
-            system = create_complex_scenario()
-        
-        # Add deadlock to simple scenario
-        if scenario_name == "simple":
-            p1 = system.processes[1]
-            p2 = system.processes[2]
-            r1 = system.resources[1]
-            r2 = system.resources[2]
-            p1.request_resource(r2)  # Creates deadlock
-            p2.request_resource(r1)
-        
-        # Print system status
-        print_system_status(system)
-        
-        # Analyze deadlock
-        visualizer = None
-        if VISUALIZATION_AVAILABLE:
-            visualizer = create_visualizer(system, "auto")
-        
-        results = detect_and_analyze_deadlock(system, visualizer, verbose=True)
-        
-        # Show visualization if available
-        if visualizer and VISUALIZATION_AVAILABLE:
-            print("🎨 Displaying visualization...")
-            try:
-                visualizer.show()
-            except:
-                print("⚠️ Display not available in current environment")
-        
-        # Test resolution if deadlock detected
-        if results['final']['deadlocked']:
-            resolution_results = resolve_deadlock_comprehensive(
-                system, 
-                results['final']['processes'], 
-                verbose=True
-            )
-    
-    print(f"\n🎉 Demonstration complete!")
-
-def main():
-    """Main function to run the simulator."""
-    parser = create_parser()
-    args = parser.parse_args()
-    
-    # Handle special commands
-    if args.features:
-        if VISUALIZATION_AVAILABLE:
-            print_feature_summary()
-        else:
-            print("❌ Visualization features not available")
-            print("Install dependencies: pip install matplotlib networkx plotly dash")
-        return 0
-    
-    if args.demo:
-        run_demonstration()
-        return 0
-    
-    # Print banner
+def run_single_scenario(scenario_name: str, args):
+    """Run a single scenario with specified options."""
     if not args.quiet:
-        print("🚀 ENHANCED DEADLOCK SIMULATOR")
-        print("=" * 60)
-        print(f"Running scenario: {args.scenario}")
-        if VISUALIZATION_AVAILABLE:
-            features = get_available_features()
-            available_count = sum(features.values())
-            print(f"✨ {available_count} visualization features available")
-        print("=" * 60)
-    
-    # Create output directory
-    output_dir = create_output_directory(args.output_dir)
-    if not args.quiet:
-        print(f"📁 Output directory: {output_dir}")
+        print(f"🔬 Running Scenario: {scenario_name.replace('-', ' ').title()}")
+        print("-" * 50)
     
     # Create system based on scenario
-    if args.scenario == "simple":
+    if scenario_name == "simple":
         system = create_simple_scenario()
-    elif args.scenario.startswith("dining"):
-        num_phil = int(args.scenario.split("-")[1])
+    elif scenario_name.startswith("dining"):
+        num_phil = int(scenario_name.split("-")[1])
         system = create_dining_philosophers(num_phil)
-    elif args.scenario == "complex":
+    elif scenario_name == "complex":
         system = create_complex_scenario()
-    elif args.scenario == "no-deadlock":
-        system = create_no_deadlock_scenario()
     else:
-        print(f"❌ Unknown scenario: {args.scenario}")
-        return 1
+        print(f"❌ Unknown scenario: {scenario_name}")
+        return False
     
-    # Initialize visualizer
-    visualizer = None
-    if (args.visualize or args.enhanced) and VISUALIZATION_AVAILABLE:
-        visualizer_type = "enhanced" if args.enhanced else "auto"
-        visualizer = create_visualizer(system, visualizer_type)
-        
-        # Configure enhanced features
-        if hasattr(args, 'theme') and hasattr(visualizer, 'set_color_scheme'):
-            visualizer.set_color_scheme(args.theme)
-        
-        if hasattr(args, 'layout') and hasattr(visualizer, 'set_layout_algorithm'):
-            try:
-                layout_type = LayoutType(args.layout)
-                visualizer.set_layout_algorithm(layout_type)
-            except:
-                pass
-        
-        if hasattr(args, 'animation') and hasattr(visualizer, 'animation_type'):
-            try:
-                animation_type = AnimationType(args.animation)
-                visualizer.animation_type = animation_type
-            except:
-                pass
-        
+    # Add deadlock to scenarios that need it
+    if scenario_name == "simple":
         if not args.quiet:
-            print(f"🎨 Visualizer configured:")
-            print(f"   Type: {visualizer_type}")
-            if hasattr(args, 'theme'):
-                print(f"   Theme: {args.theme}")
-            if hasattr(args, 'layout'):
-                print(f"   Layout: {args.layout}")
-    
-    # Print initial system state
-    if not args.quiet:
-        print_system_status(system)
-    
-    # Create potential deadlock for scenarios that need it
-    if args.scenario == "simple":
-        if not args.quiet:
-            print("\n⚙️ Creating deadlock scenario...")
+            print("⚙️ Creating deadlock scenario...")
         p1 = system.processes[1]
         p2 = system.processes[2]
         r1 = system.resources[1]
@@ -671,78 +329,181 @@ def main():
         if not args.quiet:
             print("   ✅ Circular dependency created")
     
+    # Print system status
+    if not args.quiet:
+        print_system_status(system)
+    
+    # Initialize visualizer if requested
+    visualizer = None
+    if (args.visualize or args.save or args.educational) and VISUALIZATION_AVAILABLE:
+        visualizer = DeadlockVisualizer(system)
+        if not args.quiet:
+            print("🎨 Educational visualizer initialized")
+    
     # Detect and analyze deadlock
     results = detect_and_analyze_deadlock(system, visualizer, verbose=not args.quiet)
     
-    # Test resolution if deadlock detected
-    if results['final']['deadlocked']:
-        resolution_results = resolve_deadlock_comprehensive(
-            system, 
-            results['final']['processes'], 
-            verbose=not args.quiet
+    # Handle educational output
+    if args.educational and visualizer:
+        output_dir = create_output_directory(args.output_dir)
+        if not args.quiet:
+            print(f"\n📚 Generating educational materials...")
+            print(f"📁 Output directory: {output_dir}")
+        
+        # Generate comprehensive educational materials
+        generated_files = visualizer.create_comprehensive_visualization(
+            deadlocked_processes=results['final']['processes'] if results['final']['deadlocked'] else None,
+            output_dir=str(output_dir),
+            scenario_name=scenario_name
+        )
+        
+        if not args.quiet:
+            print(f"✅ Generated {len(generated_files)} educational files")
+            for file_type, path in generated_files.items():
+                print(f"   📄 {file_type}: {path}")
+    
+    # Handle simple save
+    elif args.save and visualizer:
+        output_dir = create_output_directory(args.output_dir)
+        save_path = output_dir / f"{scenario_name}_visualization.png"
+        visualizer.save_visualization(
+            str(save_path),
+            deadlocked_processes=results['final']['processes'] if results['final']['deadlocked'] else None
+        )
+        if not args.quiet:
+            print(f"💾 Visualization saved to: {save_path}")
+    
+    # Handle simple visualization display
+    elif args.visualize and visualizer:
+        if not args.quiet:
+            print("🖼️ Displaying visualization...")
+        visualizer.visualize_current_state(
+            deadlocked_processes=results['final']['processes'] if results['final']['deadlocked'] else None
         )
     
-    # Handle exports
-    if visualizer and hasattr(args, 'export') and args.export:
-        if not args.quiet:
-            print(f"\n💾 Exporting to {args.export} format...")
-        
-        export_file = output_dir / f"deadlock_visualization.{args.export}"
-        
-        try:
-            if args.export == "png":
-                visualizer.save(str(export_file))
-            elif hasattr(visualizer, 'export_animation'):
-                visualizer.export_animation(str(export_file), args.export)
-            else:
-                visualizer.save(str(export_file))
-            
-            if not args.quiet:
-                print(f"   ✅ Exported to {export_file}")
-        except Exception as e:
-            print(f"   ❌ Export failed: {e}")
-    
-    # Show visualization if requested
-    if visualizer and (args.visualize or args.enhanced):
-        if not args.quiet:
-            print("\n🎨 Displaying visualization...")
-        try:
-            visualizer.show()
-        except Exception as e:
-            if not args.quiet:
-                print(f"⚠️ Display error: {e}")
-    
-    # Print final summary
     if not args.quiet:
-        print(f"\n📋 SIMULATION SUMMARY")
-        print(f"{'-'*30}")
-        print(f"Scenario: {args.scenario}")
-        print(f"Deadlock detected: {'Yes' if results['final']['deadlocked'] else 'No'}")
-        if results['final']['deadlocked']:
-            processes = results['final']['processes']
-            print(f"Affected processes: P{', P'.join(map(str, processes))}")
-        print(f"Output directory: {output_dir}")
-        
-        if VISUALIZATION_AVAILABLE and visualizer:
-            try:
-                if hasattr(visualizer, 'get_performance_report'):
-                    performance = visualizer.get_performance_report()
-                    print(f"Visualization performance: {performance.get('average_fps', 0):.1f} FPS avg")
-            except:
-                pass
+        print(f"✅ Scenario '{scenario_name}' completed successfully")
     
-    print(f"\n🎉 Simulation completed successfully!")
-    return 0
+    return True
 
-if __name__ == "__main__":
+def run_all_scenarios(args):
+    """Run all scenarios."""
+    scenarios = ["simple", "dining-3", "dining-5", "dining-7", "complex"]
+    
+    if not args.quiet:
+        print(f"🎯 Running All Scenarios")
+        print("=" * 50)
+    
+    results = []
+    for scenario in scenarios:
+        if not args.quiet:
+            print(f"\n{'='*20} {scenario.upper()} {'='*20}")
+        
+        try:
+            success = run_single_scenario(scenario, args)
+            results.append((scenario, success))
+        except Exception as e:
+            if not args.quiet:
+                print(f"❌ Failed to run {scenario}: {e}")
+            results.append((scenario, False))
+    
+    # Print summary
+    if not args.quiet:
+        print(f"\n📊 SUMMARY")
+        print("-" * 30)
+        successful = sum(1 for _, success in results if success)
+        total = len(results)
+        
+        for scenario, success in results:
+            status = "✅" if success else "❌"
+            print(f"{status} {scenario}")
+        
+        print(f"\nTotal: {successful}/{total} scenarios completed successfully")
+    
+    return results
+
+def run_educational_session(args):
+    """Run complete educational session."""
+    if not args.quiet:
+        print("🎓 Starting Complete Educational Session")
+        print("=" * 60)
+    
     try:
-        exit_code = main()
-        sys.exit(exit_code)
+        # Import and run educational test runner
+        from tests.run_educational_tests import EducationalTestRunner
+        
+        runner = EducationalTestRunner(args.output_dir or "educational_results")
+        results = runner.run_all_scenarios()
+        
+        if not args.quiet:
+            print(f"\n🎉 Educational session completed successfully!")
+            print(f"📁 Materials saved to: {results['session_directory']}")
+            print(f"🌐 Open: {results['session_directory']}/index.html")
+        
+        return True
+        
+    except ImportError:
+        print("❌ Educational test runner not available")
+        print("💡 Running basic all-scenarios mode instead...")
+        return run_all_scenarios(args)
+    except Exception as e:
+        print(f"❌ Educational session failed: {e}")
+        return False
+
+def main():
+    """Main function to run the simulator."""
+    parser = create_parser()
+    args = parser.parse_args()
+    
+    # Check visualization availability
+    if (args.visualize or args.save or args.educational) and not VISUALIZATION_AVAILABLE:
+        print("⚠️ Visualization not available. Install dependencies:")
+        print("   pip install matplotlib networkx")
+        if args.educational:
+            print("🔄 Proceeding without visualization...")
+        else:
+            return 1
+    
+    # Print banner
+    if not args.quiet:
+        print("🚀 EDUCATIONAL DEADLOCK SIMULATOR")
+        print("=" * 60)
+        if VISUALIZATION_AVAILABLE:
+            print("✨ Educational visualization features available")
+        print("=" * 60)
+    
+    try:
+        # Route to appropriate function
+        if args.educational_session:
+            success = run_educational_session(args)
+        elif args.all_scenarios:
+            success = run_all_scenarios(args)
+        elif args.scenario:
+            success = run_single_scenario(args.scenario, args)
+        else:
+            # Default: run simple scenario
+            if not args.quiet:
+                print("💡 No scenario specified, running simple deadlock scenario")
+            success = run_single_scenario("simple", args)
+        
+        if success:
+            if not args.quiet:
+                print(f"\n🎉 Simulation completed successfully!")
+            return 0
+        else:
+            if not args.quiet:
+                print(f"\n❌ Simulation completed with errors")
+            return 1
+            
     except KeyboardInterrupt:
         print(f"\n⏹️ Simulation interrupted by user")
-        sys.exit(1)
+        return 1
     except Exception as e:
         print(f"\n❌ Simulation failed: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+        if not args.quiet:
+            import traceback
+            traceback.print_exc()
+        return 1
+
+if __name__ == "__main__":
+    sys.exit(main())

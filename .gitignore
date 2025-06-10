@@ -175,3 +175,6 @@ cython_debug/
 
 #caches
 src/__pycache__/
+
+#reproducibles
+professor_materials

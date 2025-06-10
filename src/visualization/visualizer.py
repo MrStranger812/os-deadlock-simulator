@@ -7,7 +7,6 @@ with the existing deadlock simulator codebase while adding:
 - Multiple layout algorithms  
 - Real-time updates during simulation
 - Interactive features
-- Web-compatible output
 - Performance monitoring
 
 File location: src/visualization/visualizer.py (replace existing)
@@ -901,9 +900,6 @@ class EnhancedDeadlockVisualizer:
                 self.ani.save(filename, writer='pillow', fps=self.frame_rate)
             elif format == "mp4":
                 self.ani.save(filename, writer='ffmpeg', fps=self.frame_rate)
-            elif format == "html":
-                # For HTML export, we'd need to implement web-based version
-                print("HTML export not implemented in this version")
                 return
             
             print(f"Animation exported to {filename}")
