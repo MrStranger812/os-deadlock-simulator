@@ -177,4 +177,17 @@ cython_debug/
 src/__pycache__/
 
 #reproducibles
-professor_materials
+educational_results
+
+# --- Deadlock Simulator Font Assets ---
+# By default, ignore all extracted font folders to keep the repo clean.
+fonts/
+misc/
+Round-Dots/
+
+# If you want to include specific font files for portability, comment out the above lines
+# and add only the needed .ttf files, e.g.:
+# !fonts/Vazirmatn-Regular.ttf
+# !fonts/Vazirmatn-Bold.ttf
+#
+# Or create a dedicated folder for distributable fonts and add only those files.
