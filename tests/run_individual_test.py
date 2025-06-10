@@ -23,7 +23,13 @@ Available visualization types:
 """
 
 import sys
+import os
 import argparse
+
+# Add the project root directory to the Python path
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
+
 from test_scenarios import (
     create_simple_deadlock,
     create_dining_philosophers,

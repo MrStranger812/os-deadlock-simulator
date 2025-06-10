@@ -1,23 +1,29 @@
-# Core dependencies
-numpy==1.24.3
-matplotlib==3.7.1
-networkx==3.1
-pytest==7.3.1
+# Core Dependencies
+# ================
+numpy>=1.24.0
+matplotlib>=3.7.0
+networkx>=3.1
+pytest>=7.3.0
 
-# Optional dependencies
-pandas==2.0.1  # For data processing
-#visualization
-plotly==5.17.0
-dash==2.14.1
-kaleido==0.2.1  # For static image export
-psutil==5.9.5   # For performance monitoring
-# Enhanced Visualization Dependencies
+# Visualization & Animation
+# =========================
 pillow>=10.0.0
+imageio[ffmpeg]>=2.31.0
 
-# Animation and Export Dependencies
-imageio[ffmpeg]>=2.31.1
-imageio-ffmpeg>=0.4.8
-
-# Performance and Utilities
-numba>=0.57.0
+# Performance & Utilities
+# =======================
 scipy>=1.10.0
+pandas>=2.0.0
+psutil>=5.9.0
+
+# Optional Development Dependencies
+# ================================
+# Uncomment for development work:
+# black>=23.0.0
+# flake8>=6.0.0
+# mypy>=1.5.0
+# jupyter>=1.0.0
+
+# Removed Web Dependencies (plotly, dash, kaleido)
+# These were used for web dashboard functionality
+# which has been removed to simplify the project

@@ -1,6 +1,7 @@
 # Operating Systems Deadlock Simulator
 
 A comprehensive Python-based simulator for demonstrating deadlock detection and resolution in multi-threaded systems with advanced visualization capabilities.
+A comprehensive Python-based simulator for demonstrating deadlock detection and resolution in multi-threaded systems with advanced visualization capabilities.
 
 ## 🎯 Overview
 
@@ -17,7 +18,24 @@ This project implements a complete deadlock simulation environment featuring:
 - pip package manager
 
 ### Quick Setup
+## 🎯 Overview
+
+This project implements a complete deadlock simulation environment featuring:
+- **Multiple deadlock detection algorithms** (Resource Allocation Graph, Banker's Algorithm)
+- **Deadlock resolution strategies** (Process Termination, Resource Preemption, Rollback)
+- **Advanced visualization system** with animations, multiple layouts, and web dashboard
+- **Educational test scenarios** (Simple deadlock, Dining Philosophers, Complex allocation)
+
+## 📦 Installation
+
+### Prerequisites
+- Python 3.8 or higher
+- pip package manager
+
+### Quick Setup
 ```bash
+# Clone the repository
+git clone <repository-url>
 # Clone the repository
 git clone <repository-url>
 cd os-deadlock-simulator
@@ -38,9 +56,6 @@ python -m src.main --scenario simple --visualize
 
 # Run dining philosophers with enhanced features
 python -m src.main --scenario dining-5 --enhanced --layout circular --theme dark
-
-# Launch interactive web dashboard
-python -m src.main --web
 ```
 
 ### Running Test Scenarios
@@ -67,13 +82,7 @@ python tests/run_individual_test.py dining-5 --visualize --viz-types all
 - **Multiple Layouts**: Spring, Circular, Hierarchical, Grid, Kamada-Kawai
 - **Color Themes**: Default, Dark, High-Contrast, Colorblind-friendly
 - **Dynamic Animations**: Fade, Pulse, Bounce, Rotate, Glow effects
-- **Export Options**: PNG, GIF, MP4, HTML formats
-
-### Web Dashboard
-- **Interactive Controls**: Real-time layout and theme switching
-- **Live Metrics**: System performance monitoring
-- **Responsive Design**: Works on desktop and mobile
-- **Export Features**: Static HTML generation
+- **Export Options**: PNG, GIF, MP4 formats
 
 ## 📝 Command Reference
 
@@ -84,7 +93,6 @@ python tests/run_individual_test.py dining-5 --visualize --viz-types all
 | `--scenario` | Choose simulation scenario | `--scenario dining-5` |
 | `--visualize` | Enable basic visualization | `--visualize` |
 | `--enhanced` | Use enhanced visualization features | `--enhanced` |
-| `--web` | Launch web dashboard | `--web --port 8080` |
 | `--layout` | Set layout algorithm | `--layout circular` |
 | `--theme` | Set color theme | `--theme dark` |
 | `--animation` | Set animation type | `--animation pulse` |
@@ -154,9 +162,6 @@ python -m src.main \
   --export gif \
   --output-dir ./presentations
 
-# Web dashboard with custom port
-python -m src.main --web --port 8080
-
 # Educational mode with step-by-step visualization
 python tests/run_individual_test.py dining-5 \
   --visualize \
@@ -212,7 +217,6 @@ The simulator generates various output files in the specified output directory:
 ### Generated Files
 - `deadlock_visualization.png` - Static visualization
 - `system_animation.gif` - Animated sequence
-- `deadlock_report.html` - Interactive web report
 - `performance_metrics.json` - System performance data
 - `test_results.json` - Test scenario results
 
@@ -246,9 +250,6 @@ output_directory/
 # Step-by-step deadlock detection
 python tests/run_individual_test.py simple --visualize --viz-types detection
 
-# Interactive dining philosophers demonstration
-python -m src.main --scenario dining-5 --web --theme educational
-
 # Accessibility-compliant presentation
 python -m src.main --scenario complex --enhanced --theme colorblind --export png
 ```
@@ -268,16 +269,7 @@ python scripts/batch_test.py --scenarios all --themes all --layouts all
 
 **ImportError for visualization modules**
 ```bash
-pip install matplotlib networkx plotly dash
-```
-
-**Web dashboard not starting**
-```bash
-# Check port availability
-python -m src.main --web --port 8081
-
-# Install web dependencies
-pip install plotly dash kaleido
+pip install matplotlib networkx
 ```
 
 **Animation export failing**
@@ -304,11 +296,16 @@ pip install scipy numpy
 - Use `--theme dark` to reduce eye strain during long sessions
 - Export as PNG for high-quality static images
 - Export as GIF for presentations (smaller file size)
-- Use web dashboard for interactive demonstrations
+- Use enhanced features for interactive demonstrations
 
 ## 🤝 Contributing
 
 1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes with proper tests
+4. Commit changes: `git commit -m 'Add amazing feature'`
+5. Push to branch: `git push origin feature/amazing-feature`
+6. Submit a Pull Request
 2. Create a feature branch: `git checkout -b feature/amazing-feature`
 3. Make your changes with proper tests
 4. Commit changes: `git commit -m 'Add amazing feature'`

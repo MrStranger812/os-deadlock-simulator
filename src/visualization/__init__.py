@@ -1,61 +1,63 @@
 """
-Enhanced Visualization Components for the Deadlock Simulator
+Enhanced Visualization Module for Deadlock Simulator
 
-This subpackage provides comprehensive tools for visualizing the state of the system,
-including dynamic animations, multiple layouts, interactive features, web-based dashboards,
-advanced theming, and accessibility compliance.
+This module provides comprehensive visualization capabilities including:
+- Static and dynamic visualizations
+- Multiple layout algorithms
+- Color themes and accessibility support
+- Web-based interactive dashboards
+- Animation and export capabilities
 
-Features:
-- 🎨 Enhanced static and dynamic visualizations
-- 🌐 Interactive web dashboards
-- 🎬 Multiple animation types and easing functions
-- 🎭 Professional color themes with accessibility support
-- 📊 Performance monitoring and optimization
-- ♿ WCAG accessibility compliance
-- 🔄 Real-time visualization updates
-- 💾 Multiple export formats (PNG, GIF, MP4, HTML)
-- 🖱️ Interactive controls and widgets
+Quick Start:
+    from src.visualization import DeadlockVisualizer
+    
+    visualizer = DeadlockVisualizer(system)
+    visualizer.visualize_current_state()
+    visualizer.show()
 
-File location: src/visualization/__init__.py
+Advanced Usage:
+    from src.visualization import EnhancedDeadlockVisualizer, LayoutType
+    
+    visualizer = EnhancedDeadlockVisualizer(
+        system, 
+        layout_type=LayoutType.CIRCULAR
+    )
+    visualizer.set_color_scheme('dark')
+    animation = visualizer.create_dynamic_visualization()
 """
 
 import logging
 from typing import Dict, List, Optional, Union
 
+# Configure logging
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(__name__)
+
 # =============================================================================
-# CORE VISUALIZER IMPORTS
+# CORE IMPORTS AND FEATURE DETECTION
 # =============================================================================
 
+# Core visualizer (always available)
 try:
-    from .visualizer import (
+    from .core_visualizer import CoreDeadlockVisualizer
+    CORE_AVAILABLE = True
+except ImportError as e:
+    logger.error(f"Core visualizer not available: {e}")
+    CORE_AVAILABLE = False
+    CoreDeadlockVisualizer = None
+
+# Enhanced visualizer with advanced features
+try:
+    from .enhanced_visualizer import (
         EnhancedDeadlockVisualizer,
         LayoutType,
         AnimationType,
         VisualizationState
     )
-    ENHANCED_VISUALIZER_AVAILABLE = True
+    ENHANCED_AVAILABLE = True
 except ImportError as e:
-    logging.warning(f"Enhanced visualizer not available: {e}")
-    ENHANCED_VISUALIZER_AVAILABLE = False
-    
-    # Fallback basic visualizer
-    try:
-        from .visualizer import DeadlockVisualizer as BasicDeadlockVisualizer
-        EnhancedDeadlockVisualizer = BasicDeadlockVisualizer
-    except ImportError:
-        # Ultimate fallback
-        class DummyVisualizer:
-            def __init__(self, system, **kwargs):
-                self.system = system
-                print("⚠️ No visualizer available. Install matplotlib for basic visualization.")
-            
-            def visualize_current_state(self, deadlocked_processes=None):
-                print("📊 Visualization not available")
-            
-            def show(self): pass
-            def save(self, filename): pass
-        
-        EnhancedDeadlockVisualizer = DummyVisualizer
+    logger.warning(f"Enhanced visualizer not available: {e}")
+    ENHANCED_AVAILABLE = False
     
     # Fallback enums
     from enum import Enum
@@ -70,797 +72,347 @@ except ImportError as e:
         FADE = "fade"
         PULSE = "pulse"
         SCALE = "scale"
-
-# =============================================================================
-# WEB VISUALIZER IMPORTS
-# =============================================================================
-
-try:
-    from .web_visualizer import WebDeadlockVisualizer
-    WEB_VISUALIZER_AVAILABLE = True
-except ImportError as e:
-    logging.warning(f"Web visualizer not available: {e}")
-    WEB_VISUALIZER_AVAILABLE = False
-    WebDeadlockVisualizer = None
-
-# =============================================================================
-# ANIMATION UTILITIES IMPORTS
-# =============================================================================
-
-try:
-    from .animation_utils import (
-        AnimationUtils,
-        EasingFunction,
-        AnimationFrame,
-        AnimationState,
-        create_animation_utils,
-        ANIMATION_PRESETS
-    )
-    ANIMATION_UTILS_AVAILABLE = True
-except ImportError as e:
-    logging.warning(f"Animation utilities not available: {e}")
-    ANIMATION_UTILS_AVAILABLE = False
     
-    # Fallback classes
-    class AnimationUtils:
-        def __init__(self, *args, **kwargs):
-            print("⚠️ Animation utilities not available")
-    
-    class EasingFunction(Enum):
-        LINEAR = "linear"
-        EASE_IN_OUT = "ease_in_out"
-    
-    AnimationFrame = None
-    AnimationState = None
-    create_animation_utils = lambda: AnimationUtils()
-    ANIMATION_PRESETS = {}
+    EnhancedDeadlockVisualizer = CoreDeadlockVisualizer
+    VisualizationState = None
 
-# =============================================================================
-# THEMES IMPORTS
-# =============================================================================
+# Web visualizer - REMOVED
+# Web functionality has been removed to simplify the project
+WEB_AVAILABLE = False
+WebDeadlockVisualizer = None
 
+# Theme system
 try:
     from .themes import (
-        ColorThemes as EnhancedColorThemes,
-        ColorPalette,
-        ThemeMetadata,
-        ThemeType,
-        get_theme_manager,
+        ColorThemes,
+        ThemeManager,
         get_theme,
-        list_available_themes,
-        get_accessible_themes,
-        create_theme_from_colors,
-        analyze_theme_accessibility,
-        create_preset_theme,
-        PRESET_MODIFICATIONS
+        list_themes,
+        create_custom_theme
     )
-    ENHANCED_THEMES_AVAILABLE = True
+    THEMES_AVAILABLE = True
 except ImportError as e:
-    logging.warning(f"Enhanced themes not available: {e}")
-    ENHANCED_THEMES_AVAILABLE = False
+    logger.warning(f"Enhanced themes not available: {e}")
+    THEMES_AVAILABLE = False
     
-    # Fallback basic themes
+    # Fallback theme system
     class ColorThemes:
         DEFAULT = {
+            'process_running': '#2ecc71',
+            'process_waiting': '#e74c3c',
+            'process_terminated': '#95a5a6',
+            'resource': '#3498db',
+            'edge_allocation': '#27ae60',
+            'edge_request': '#c0392b',
             'background': '#ffffff',
-            'process_running': '#28a745',
-            'process_waiting': '#dc3545',
-            'process_terminated': '#6c757d',
-            'resource': '#007bff',
-            'edge_allocation': '#28a745',
-            'edge_request': '#dc3545',
-            'text': '#333333',
-            'highlight': '#ffc107'
+            'text': '#2c3e50',
+            'highlight': '#f39c12'
         }
         
         DARK = {
-            'background': '#2c3e50',
             'process_running': '#58d68d',
             'process_waiting': '#ec7063',
             'process_terminated': '#aeb6bf',
             'resource': '#5dade2',
             'edge_allocation': '#52c41a',
             'edge_request': '#ff4d4f',
+            'background': '#2c3e50',
             'text': '#ecf0f1',
             'highlight': '#f1c40f'
         }
         
         COLORBLIND = {
-            'background': '#ffffff',
             'process_running': '#1f77b4',
             'process_waiting': '#ff7f0e',
             'process_terminated': '#7f7f7f',
             'resource': '#2ca02c',
             'edge_allocation': '#d62728',
             'edge_request': '#9467bd',
+            'background': '#ffffff',
             'text': '#000000',
             'highlight': '#e377c2'
         }
     
-    EnhancedColorThemes = ColorThemes
-    ColorPalette = None
-    ThemeMetadata = None
-    
-    class ThemeType(Enum):
-        LIGHT = "light"
-        DARK = "dark"
-        COLORBLIND = "colorblind"
-    
-    def get_theme_manager(): return ColorThemes()
+    ThemeManager = None
     def get_theme(name): return getattr(ColorThemes, name.upper(), ColorThemes.DEFAULT)
-    def list_available_themes(): return ['default', 'dark', 'colorblind']
-    def get_accessible_themes(rating="AA"): return ['colorblind']
-    def create_theme_from_colors(name, **colors): return False
-    def analyze_theme_accessibility(name): return {}
-    def create_preset_theme(name, base="default"): return False
-    PRESET_MODIFICATIONS = {}
+    def list_themes(): return ['default', 'dark', 'colorblind']
+    def create_custom_theme(name, **colors): return False
 
 # =============================================================================
-# BACKWARD COMPATIBILITY
+# MAIN VISUALIZER SELECTION
 # =============================================================================
 
-# Main visualizer alias for backward compatibility
-DeadlockVisualizer = EnhancedDeadlockVisualizer
-
-# Legacy ColorThemes class (if enhanced not available)
-if not ENHANCED_THEMES_AVAILABLE:
-    # Keep the simple ColorThemes as-is for compatibility
-    pass
+# Select the best available visualizer as the main one
+if ENHANCED_AVAILABLE:
+    DeadlockVisualizer = EnhancedDeadlockVisualizer
+    PRIMARY_VISUALIZER = "enhanced"
+elif CORE_AVAILABLE:
+    DeadlockVisualizer = CoreDeadlockVisualizer
+    PRIMARY_VISUALIZER = "core"
+else:
+    # Ultimate fallback - create a minimal dummy visualizer
+    class DummyVisualizer:
+        def __init__(self, system, **kwargs):
+            self.system = system
+            print("⚠️ No visualizer available. Install matplotlib for basic visualization.")
+        
+        def visualize_current_state(self, deadlocked_processes=None):
+            print("📊 Visualization not available - install visualization dependencies")
+            self._print_text_summary(deadlocked_processes)
+        
+        def _print_text_summary(self, deadlocked_processes=None):
+            """Print a text-based summary of the system state."""
+            print(f"\n{'='*50}")
+            print("SYSTEM STATE SUMMARY")
+            print(f"{'='*50}")
+            print(f"Time: {self.system.time}")
+            print(f"Processes: {len(self.system.processes)}")
+            print(f"Resources: {len(self.system.resources)}")
+            
+            if deadlocked_processes:
+                print(f"🔴 DEADLOCK DETECTED!")
+                print(f"Affected processes: P{', P'.join(map(str, deadlocked_processes))}")
+            else:
+                print("🟢 No deadlock detected")
+            
+            print(f"\nProcess Details:")
+            for pid, process in self.system.processes.items():
+                status_emoji = {"RUNNING": "🟢", "WAITING": "🟡", "TERMINATED": "🔴"}
+                emoji = status_emoji.get(process.status, "⚪")
+                print(f"  {emoji} P{pid} ({process.status})")
+                
+                if process.resources_held:
+                    held = [f"R{r.rid}" for r in process.resources_held]
+                    print(f"    🔒 Holding: {', '.join(held)}")
+                
+                if process.resources_requested:
+                    requested = [f"R{r.rid}" for r in process.resources_requested]
+                    print(f"    ⏳ Requesting: {', '.join(requested)}")
+            
+            print(f"\nResource Details:")
+            for rid, resource in self.system.resources.items():
+                print(f"  📦 R{rid}: {resource.available_instances}/{resource.total_instances} available")
+                if resource.allocated_to:
+                    allocated = [f"P{pid}({count})" for pid, count in resource.allocated_to.items()]
+                    print(f"    🔗 Allocated to: {', '.join(allocated)}")
+        
+        def show(self): pass
+        def save(self, filename): print(f"⚠️ Cannot save - visualization not available")
+    
+    DeadlockVisualizer = DummyVisualizer
+    PRIMARY_VISUALIZER = "dummy"
 
 # =============================================================================
-# FEATURE DETECTION AND CAPABILITIES
+# FEATURE AVAILABILITY
 # =============================================================================
 
-# Feature availability flags
 FEATURES = {
-    'enhanced_visualizer': ENHANCED_VISUALIZER_AVAILABLE,
-    'web_dashboard': WEB_VISUALIZER_AVAILABLE,
-    'animations': ANIMATION_UTILS_AVAILABLE,
-    'enhanced_themes': ENHANCED_THEMES_AVAILABLE,
-    'dynamic_layouts': ENHANCED_VISUALIZER_AVAILABLE,
-    'export_capabilities': ENHANCED_VISUALIZER_AVAILABLE,
-    'performance_monitoring': ENHANCED_VISUALIZER_AVAILABLE,
-    'real_time_updates': ENHANCED_VISUALIZER_AVAILABLE,
-    'accessibility_compliance': ENHANCED_THEMES_AVAILABLE,
-    'interactive_controls': ENHANCED_VISUALIZER_AVAILABLE
+    'core_visualizer': CORE_AVAILABLE,
+    'enhanced_visualizer': ENHANCED_AVAILABLE,
+    'enhanced_themes': THEMES_AVAILABLE,
+    'animations': ENHANCED_AVAILABLE,
+    'multiple_layouts': ENHANCED_AVAILABLE,
+    'export_capabilities': ENHANCED_AVAILABLE,
+    'interactive_controls': ENHANCED_AVAILABLE,
+    'performance_monitoring': ENHANCED_AVAILABLE
 }
 
 def get_available_features() -> Dict[str, bool]:
-    """
-    Get a dictionary of available visualization features.
-    
-    Returns:
-        Dict mapping feature names to availability status
-    """
+    """Get dictionary of available features."""
     return FEATURES.copy()
 
-def check_feature_availability(feature_name: str) -> bool:
-    """
-    Check if a specific feature is available.
-    
-    Args:
-        feature_name: Name of the feature to check
-        
-    Returns:
-        bool: True if feature is available
-    """
-    return FEATURES.get(feature_name, False)
-
-def get_missing_dependencies() -> List[str]:
-    """
-    Get a list of missing dependencies that would enable more features.
-    
-    Returns:
-        List of missing package names
-    """
-    missing = []
-    
-    if not WEB_VISUALIZER_AVAILABLE:
-        missing.extend(['plotly', 'dash'])
-    
-    if not ENHANCED_VISUALIZER_AVAILABLE:
-        missing.extend(['matplotlib', 'networkx', 'numpy'])
-    
-    if not ANIMATION_UTILS_AVAILABLE:
-        missing.extend(['numpy'])
-    
-    return list(set(missing))  # Remove duplicates
-
 def print_feature_summary():
-    """Print a comprehensive summary of available visualization features."""
-    print("🎨 Enhanced Deadlock Visualizer - Feature Summary")
-    print("=" * 60)
+    """Print a summary of available visualization features."""
+    print("🎨 Deadlock Visualizer - Feature Summary")
+    print("=" * 50)
+    print(f"Primary visualizer: {PRIMARY_VISUALIZER}")
+    print()
     
     # Core features
-    print("\n📊 Core Visualization Features:")
-    features_core = [
-        ('enhanced_visualizer', 'Enhanced Static & Dynamic Visualization'),
-        ('dynamic_layouts', 'Multiple Layout Algorithms'),
-        ('export_capabilities', 'Export to PNG, GIF, MP4'),
-        ('performance_monitoring', 'Real-time Performance Monitoring'),
-        ('real_time_updates', 'Live System State Updates')
+    print("📊 Core Features:")
+    core_features = [
+        ('core_visualizer', 'Basic Static Visualization'),
+        ('enhanced_visualizer', 'Enhanced Dynamic Visualization'),
+        ('multiple_layouts', 'Multiple Layout Algorithms'),
+        ('export_capabilities', 'Export to PNG, GIF, MP4')
     ]
     
-    for feature, description in features_core:
+    for feature, description in core_features:
         status = "✅" if FEATURES[feature] else "❌"
         print(f"   {status} {description}")
     
     # Interactive features
     print("\n🖱️ Interactive Features:")
-    features_interactive = [
+    interactive_features = [
         ('interactive_controls', 'Play/Pause/Speed Controls'),
-        ('web_dashboard', 'Interactive Web Dashboard'),
         ('animations', 'Dynamic Animations & Transitions')
     ]
     
-    for feature, description in features_interactive:
+    for feature, description in interactive_features:
         status = "✅" if FEATURES[feature] else "❌"
         print(f"   {status} {description}")
     
-    # Accessibility features
-    print("\n♿ Accessibility Features:")
-    features_accessibility = [
+    # Theme features
+    print("\n🎨 Theme Features:")
+    theme_features = [
         ('enhanced_themes', 'Professional Color Themes'),
-        ('accessibility_compliance', 'WCAG Accessibility Analysis')
+        ('enhanced_themes', 'Accessibility Compliance')
     ]
     
-    for feature, description in features_accessibility:
+    for feature, description in theme_features:
         status = "✅" if FEATURES[feature] else "❌"
         print(f"   {status} {description}")
     
-    # Summary statistics
+    # Overall statistics
     available_count = sum(FEATURES.values())
     total_count = len(FEATURES)
     percentage = (available_count / total_count) * 100
     
-    print(f"\n📈 Overall Feature Availability: {available_count}/{total_count} ({percentage:.1f}%)")
+    print(f"\n📈 Overall: {available_count}/{total_count} features available ({percentage:.1f}%)")
     
     # Missing dependencies
-    missing = get_missing_dependencies()
-    if missing:
-        print(f"\n📦 To enable all features, install: pip install {' '.join(missing)}")
+    missing_deps = []
+    if not ENHANCED_AVAILABLE:
+        missing_deps.extend(['matplotlib', 'networkx', 'numpy'])
+    if not WEB_AVAILABLE:
+        missing_deps.extend(['plotly', 'dash'])
+    
+    if missing_deps:
+        unique_deps = list(set(missing_deps))
+        print(f"\n📦 Install for full features: pip install {' '.join(unique_deps)}")
     else:
-        print(f"\n🎉 All visualization features are available!")
+        print(f"\n🎉 All features available!")
     
-    # Quick start guide
-    print(f"\n🚀 Quick Start:")
-    print(f"   from src.visualization import DeadlockVisualizer")
-    print(f"   visualizer = DeadlockVisualizer(system)")
-    print(f"   visualizer.visualize_current_state()")
-    
-    if WEB_VISUALIZER_AVAILABLE:
-        print(f"   # For web dashboard:")
-        print(f"   from src.visualization import WebDeadlockVisualizer")
-        print(f"   web_viz = WebDeadlockVisualizer(system)")
-        print(f"   web_viz.run_server()")
-    
-    print("=" * 60)
+    print("=" * 50)
 
 # =============================================================================
-# FACTORY FUNCTIONS AND UTILITIES
+# UTILITY FUNCTIONS
 # =============================================================================
 
-def create_visualizer(system, enhanced: bool = True, **kwargs) -> EnhancedDeadlockVisualizer:
+def create_visualizer(system, visualizer_type: str = "auto", **kwargs):
     """
     Factory function to create the appropriate visualizer.
     
     Args:
         system: The deadlock system to visualize
-        enhanced: Whether to use enhanced features if available
+        visualizer_type: Type of visualizer ("auto", "enhanced", "core")
         **kwargs: Additional arguments for the visualizer
         
     Returns:
         Visualizer instance
     """
-    if enhanced and ENHANCED_VISUALIZER_AVAILABLE:
+    if visualizer_type == "enhanced" and ENHANCED_AVAILABLE:
         return EnhancedDeadlockVisualizer(system, **kwargs)
+    elif visualizer_type == "core" and CORE_AVAILABLE:
+        return CoreDeadlockVisualizer(system, **kwargs)
+    elif visualizer_type == "auto":
+        # Auto-select best available
+        return DeadlockVisualizer(system, **kwargs)
     else:
-        # Use basic visualizer or fallback
+        # Fallback to default
         return DeadlockVisualizer(system, **kwargs)
 
-def create_web_visualizer(system, **kwargs) -> Optional[WebDeadlockVisualizer]:
-    """
-    Factory function to create web visualizer if available.
-    
-    Args:
-        system: The deadlock system to visualize
-        **kwargs: Additional arguments for the web visualizer
-        
-    Returns:
-        WebDeadlockVisualizer instance or None if not available
-    """
-    if WEB_VISUALIZER_AVAILABLE:
-        return WebDeadlockVisualizer(system, **kwargs)
-    else:
-        print("❌ Web visualizer not available. Install: pip install plotly dash")
-        return None
+# Web visualizer creation function - REMOVED
+def create_web_visualizer(system, **kwargs):
+    """Web visualizer has been removed to simplify the project."""
+    print("❌ Web visualizer has been removed from this version.")
+    print("💡 Use enhanced visualizer with export capabilities instead:")
+    print("   visualizer = create_visualizer(system, 'enhanced')")
+    print("   visualizer.export_animation('output.gif', 'gif')")
+    return None
 
-def create_animation_manager(**kwargs) -> AnimationUtils:
-    """
-    Factory function to create animation utilities.
-    
-    Args:
-        **kwargs: Arguments for AnimationUtils
-        
-    Returns:
-        AnimationUtils instance
-    """
-    if ANIMATION_UTILS_AVAILABLE:
-        return create_animation_utils(**kwargs)
-    else:
-        print("⚠️ Animation utilities not available")
-        return AnimationUtils(**kwargs)
-
-def setup_visualization_environment(enable_logging: bool = True) -> Dict[str, bool]:
-    """
-    Set up the visualization environment and return capability status.
-    
-    Args:
-        enable_logging: Whether to enable detailed logging
-        
-    Returns:
-        Dictionary of enabled capabilities
-    """
-    if enable_logging:
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        )
-    
-    logger = logging.getLogger(__name__)
-    
-    # Test core functionality
-    capabilities = {}
-    
-    try:
-        # Test basic visualization
-        capabilities['basic_visualization'] = True
-        logger.info("✅ Basic visualization support available")
-    except Exception as e:
-        capabilities['basic_visualization'] = False
-        logger.warning(f"❌ Basic visualization failed: {e}")
-    
-    try:
-        # Test enhanced features
-        if ENHANCED_VISUALIZER_AVAILABLE:
-            capabilities['enhanced_visualization'] = True
-            logger.info("✅ Enhanced visualization features available")
-        else:
-            capabilities['enhanced_visualization'] = False
-            logger.info("⚠️ Enhanced visualization not available")
-    except Exception as e:
-        capabilities['enhanced_visualization'] = False
-        logger.warning(f"❌ Enhanced visualization failed: {e}")
-    
-    try:
-        # Test web features
-        if WEB_VISUALIZER_AVAILABLE:
-            capabilities['web_visualization'] = True
-            logger.info("✅ Web visualization features available")
-        else:
-            capabilities['web_visualization'] = False
-            logger.info("⚠️ Web visualization not available")
-    except Exception as e:
-        capabilities['web_visualization'] = False
-        logger.warning(f"❌ Web visualization failed: {e}")
-    
-    return capabilities
-
-# =============================================================================
-# INTEGRATION HELPERS
-# =============================================================================
-
-def integrate_with_existing_code(system, visualization_type: str = "auto", **kwargs):
-    """
-    Smart integration function that automatically selects the best available visualizer.
-    
-    Args:
-        system: The deadlock system to visualize
-        visualization_type: Type of visualization ("auto", "basic", "enhanced", "web")
-        **kwargs: Additional arguments
-        
-    Returns:
-        Appropriate visualizer instance
-    """
-    if visualization_type == "web" and WEB_VISUALIZER_AVAILABLE:
-        return WebDeadlockVisualizer(system, **kwargs)
-    elif visualization_type == "enhanced" and ENHANCED_VISUALIZER_AVAILABLE:
-        return EnhancedDeadlockVisualizer(system, **kwargs)
-    elif visualization_type == "basic":
-        return DeadlockVisualizer(system, **kwargs)
-    elif visualization_type == "auto":
-        # Auto-select best available option
-        if ENHANCED_VISUALIZER_AVAILABLE:
-            return EnhancedDeadlockVisualizer(system, **kwargs)
-        else:
-            return DeadlockVisualizer(system, **kwargs)
-    else:
-        # Fallback to basic
-        return DeadlockVisualizer(system, **kwargs)
-
-def get_recommended_settings(use_case: str = "general") -> Dict[str, Union[str, bool, int]]:
-    """
-    Get recommended visualization settings for different use cases.
-    
-    Args:
-        use_case: The intended use case ("general", "presentation", "education", 
-                 "research", "accessibility", "performance")
-                 
-    Returns:
-        Dictionary of recommended settings
-    """
-    settings = {
-        "general": {
-            "layout": "spring",
-            "theme": "default",
-            "animation": "fade",
-            "real_time": True,
-            "export_format": "png"
-        },
-        "presentation": {
-            "layout": "hierarchical",
-            "theme": "professional",
-            "animation": "pulse",
-            "real_time": False,
-            "export_format": "gif"
-        },
-        "education": {
-            "layout": "circular",
-            "theme": "educational",
-            "animation": "bounce",
-            "real_time": True,
-            "export_format": "gif"
-        },
-        "research": {
-            "layout": "spring",
-            "theme": "default",
-            "animation": "fade",
-            "real_time": True,
-            "export_format": "mp4"
-        },
-        "accessibility": {
-            "layout": "hierarchical",
-            "theme": "colorblind",
-            "animation": "fade",
-            "real_time": False,
-            "export_format": "png"
-        },
-        "performance": {
-            "layout": "grid",
-            "theme": "default",
-            "animation": None,
-            "real_time": False,
-            "export_format": "png"
-        }
+def check_dependencies():
+    """Check and report on visualization dependencies."""
+    deps = {
+        'matplotlib': 'Basic visualization',
+        'networkx': 'Graph layouts and algorithms',
+        'numpy': 'Numerical computations',
+        'pillow': 'Image processing',
+        'imageio': 'Animation export'
     }
     
-    return settings.get(use_case, settings["general"])
+    print("📦 Dependency Check:")
+    print("-" * 30)
+    
+    for package, description in deps.items():
+        try:
+            __import__(package)
+            print(f"✅ {package:<12} - {description}")
+        except ImportError:
+            print(f"❌ {package:<12} - {description} (missing)")
+    
+    print("-" * 30)
 
 # =============================================================================
-# VERSION AND COMPATIBILITY INFORMATION
+# VERSION AND METADATA
 # =============================================================================
 
 __version__ = '2.0.0'
-__author__ = 'Enhanced Deadlock Simulator Team'
-__license__ = 'MIT'
+__author__ = 'Deadlock Simulator Team'
 
-# Compatibility matrix
-COMPATIBILITY = {
-    'python_min_version': '3.7',
-    'matplotlib_min_version': '3.5.0',
-    'networkx_min_version': '2.6',
-    'plotly_min_version': '5.0.0',
-    'dash_min_version': '2.0.0'
-}
-
-def get_version_info() -> Dict[str, str]:
-    """Get version information for the visualization module."""
+def get_version_info():
+    """Get version and feature information."""
     return {
-        'module_version': __version__,
+        'version': __version__,
         'author': __author__,
-        'license': __license__,
-        'features_available': len([f for f in FEATURES.values() if f]),
-        'total_features': len(FEATURES)
+        'primary_visualizer': PRIMARY_VISUALIZER,
+        'features_available': sum(FEATURES.values()),
+        'total_features': len(FEATURES),
+        'enhanced_available': ENHANCED_AVAILABLE
     }
 
 # =============================================================================
-# PUBLIC API EXPORTS
+# PUBLIC API
 # =============================================================================
 
-# Primary classes (always available)
 __all__ = [
     # Main visualizer classes
-    'DeadlockVisualizer',           # Primary visualizer (backward compatible)
-    'EnhancedDeadlockVisualizer',   # Enhanced visualizer
+    'DeadlockVisualizer',           # Primary (best available)
+    'create_visualizer',            # Factory function
     
-    # Enums and data classes
+    # Feature detection
+    'get_available_features',
+    'print_feature_summary',
+    'check_dependencies',
+    'get_version_info',
+    
+    # Enums (always available, may be fallback)
     'LayoutType',
     'AnimationType',
     
     # Theme system
-    'ColorThemes',                  # Theme system (backward compatible)
-    
-    # Feature detection
-    'get_available_features',
-    'check_feature_availability',
-    'print_feature_summary',
-    
-    # Factory functions
-    'create_visualizer',
-    'integrate_with_existing_code',
-    'get_recommended_settings',
-    
-    # Utilities
-    'setup_visualization_environment',
-    'get_version_info'
+    'ColorThemes',
+    'get_theme',
+    'list_themes'
 ]
 
-# Conditionally exported classes (only if available)
-if WEB_VISUALIZER_AVAILABLE:
+# Conditionally add advanced features
+if ENHANCED_AVAILABLE:
     __all__.extend([
-        'WebDeadlockVisualizer',
-        'create_web_visualizer'
-    ])
-
-if ANIMATION_UTILS_AVAILABLE:
-    __all__.extend([
-        'AnimationUtils',
-        'EasingFunction',
-        'AnimationFrame',
-        'AnimationState',
-        'create_animation_utils',
-        'create_animation_manager',
-        'ANIMATION_PRESETS'
-    ])
-
-if ENHANCED_THEMES_AVAILABLE:
-    __all__.extend([
-        'EnhancedColorThemes',
-        'ColorPalette',
-        'ThemeMetadata',
-        'ThemeType',
-        'get_theme_manager',
-        'get_theme',
-        'list_available_themes',
-        'get_accessible_themes',
-        'create_theme_from_colors',
-        'analyze_theme_accessibility',
-        'create_preset_theme',
-        'PRESET_MODIFICATIONS'
-    ])
-
-if ENHANCED_VISUALIZER_AVAILABLE:
-    __all__.extend([
+        'EnhancedDeadlockVisualizer',
         'VisualizationState'
+    ])
+
+if THEMES_AVAILABLE:
+    __all__.extend([
+        'ThemeManager',
+        'create_custom_theme'
     ])
 
 # =============================================================================
 # MODULE INITIALIZATION
 # =============================================================================
 
-def _initialize_module():
-    """Initialize the visualization module."""
-    logger = logging.getLogger(__name__)
-    
-    # Suppress noisy matplotlib warnings if present
-    try:
-        import matplotlib
-        matplotlib.use('Agg', force=False)  # Use non-interactive backend as fallback
-    except ImportError:
-        pass
-    
-    # Log feature availability
-    available_features = sum(FEATURES.values())
-    total_features = len(FEATURES)
-    
-    logger.info(f"Deadlock Visualizer initialized: {available_features}/{total_features} features available")
-    
-    # Check for common issues
-    missing_deps = get_missing_dependencies()
-    if missing_deps:
-        logger.info(f"Install additional packages for full functionality: {', '.join(missing_deps)}")
-
-# Auto-initialize when imported (unless disabled)
+# Print initialization message (unless disabled)
 import os
-if os.environ.get('DEADLOCK_VIZ_NO_AUTO_INIT') != '1':
-    _initialize_module()
-
-# Print welcome message (unless disabled)
 if os.environ.get('DEADLOCK_VIZ_QUIET') != '1':
     available = sum(FEATURES.values())
     total = len(FEATURES)
+    print(f"🎨 Deadlock Visualizer v{__version__} loaded ({available}/{total} features)")
     
-    print(f"🎨 Enhanced Deadlock Visualizer v{__version__} loaded!")
-    print(f"   Features available: {available}/{total}")
-    
-    if not ENHANCED_VISUALIZER_AVAILABLE:
-        print("   💡 Install matplotlib networkx numpy for enhanced features")
-    
-    if not WEB_VISUALIZER_AVAILABLE:
-        print("   💡 Install plotly dash for web dashboard")
-    
-    if available == total:
-        print("   🎉 All features available!")
+    if PRIMARY_VISUALIZER == "dummy":
+        print("⚠️ Limited functionality - install: pip install matplotlib networkx")
 
-# =============================================================================
-# LEGACY COMPATIBILITY LAYER
-# =============================================================================
-
-# Ensure backward compatibility with any existing imports
-try:
-    # If someone imports the old way, make sure it still works
-    from .visualizer import DeadlockVisualizer as _LegacyVisualizer
-    
-    # Make sure the enhanced version is truly backward compatible
-    if hasattr(_LegacyVisualizer, 'visualize_current_state'):
-        # Legacy API is preserved
-        pass
-    else:
-        # Create compatibility wrapper if needed
-        class BackwardCompatibleVisualizer(_LegacyVisualizer):
-            def visualize_current_state(self, deadlocked_processes=None):
-                """Backward compatible method."""
-                return super().visualize_current_state(deadlocked_processes)
-        
-        DeadlockVisualizer = BackwardCompatibleVisualizer
-
-except ImportError:
-    # If import fails, the fallback is already set above
-    pass
-
-# =============================================================================
-# DEVELOPMENT AND DEBUGGING UTILITIES
-# =============================================================================
-
-def run_feature_tests() -> Dict[str, bool]:
-    """
-    Run basic tests on all available features.
-    
-    Returns:
-        Dictionary of test results
-    """
-    results = {}
-    
-    # Test basic visualizer
-    try:
-        from src.core import System, Process, Resource
-        system = System()
-        p1 = Process(1)
-        system.add_process(p1)
-        r1 = Resource(1, instances=1)
-        system.add_resource(r1)
-        
-        visualizer = create_visualizer(system)
-        results['basic_visualizer'] = True
-    except Exception as e:
-        results['basic_visualizer'] = False
-        print(f"❌ Basic visualizer test failed: {e}")
-    
-    # Test enhanced features
-    if ENHANCED_VISUALIZER_AVAILABLE:
-        try:
-            enhanced_viz = EnhancedDeadlockVisualizer(system)
-            enhanced_viz.set_layout_algorithm(LayoutType.SPRING)
-            results['enhanced_features'] = True
-        except Exception as e:
-            results['enhanced_features'] = False
-            print(f"❌ Enhanced features test failed: {e}")
-    else:
-        results['enhanced_features'] = False
-    
-    # Test web visualizer
-    if WEB_VISUALIZER_AVAILABLE:
-        try:
-            web_viz = WebDeadlockVisualizer(system)
-            results['web_visualizer'] = True
-        except Exception as e:
-            results['web_visualizer'] = False
-            print(f"❌ Web visualizer test failed: {e}")
-    else:
-        results['web_visualizer'] = False
-    
-    # Test themes
-    if ENHANCED_THEMES_AVAILABLE:
-        try:
-            theme_manager = get_theme_manager()
-            theme = theme_manager.get_theme('default')
-            results['themes'] = True
-        except Exception as e:
-            results['themes'] = False
-            print(f"❌ Themes test failed: {e}")
-    else:
-        results['themes'] = False
-    
-    return results
-
-def generate_integration_report() -> str:
-    """
-    Generate a comprehensive integration report.
-    
-    Returns:
-        Formatted report string
-    """
-    report = []
-    report.append("🔧 Enhanced Deadlock Visualizer - Integration Report")
-    report.append("=" * 60)
-    
-    # Version info
-    version_info = get_version_info()
-    report.append(f"Version: {version_info['module_version']}")
-    report.append(f"Features Available: {version_info['features_available']}/{version_info['total_features']}")
-    report.append("")
-    
-    # Feature status
-    report.append("📊 Feature Status:")
-    for feature, available in FEATURES.items():
-        status = "✅" if available else "❌"
-        report.append(f"   {status} {feature.replace('_', ' ').title()}")
-    report.append("")
-    
-    # Dependencies
-    missing = get_missing_dependencies()
-    if missing:
-        report.append("📦 Missing Dependencies:")
-        for dep in missing:
-            report.append(f"   • {dep}")
-        report.append(f"\nInstall with: pip install {' '.join(missing)}")
-    else:
-        report.append("✅ All dependencies satisfied")
-    report.append("")
-    
-    # Integration examples
-    report.append("🚀 Integration Examples:")
-    report.append("   # Basic usage:")
-    report.append("   from src.visualization import DeadlockVisualizer")
-    report.append("   visualizer = DeadlockVisualizer(system)")
-    report.append("   visualizer.visualize_current_state()")
-    report.append("")
-    
-    if ENHANCED_VISUALIZER_AVAILABLE:
-        report.append("   # Enhanced features:")
-        report.append("   from src.visualization import EnhancedDeadlockVisualizer, LayoutType")
-        report.append("   viz = EnhancedDeadlockVisualizer(system, layout_type=LayoutType.CIRCULAR)")
-        report.append("   viz.set_color_scheme('dark')")
-        report.append("   animation = viz.create_dynamic_visualization()")
-        report.append("")
-    
-    if WEB_VISUALIZER_AVAILABLE:
-        report.append("   # Web dashboard:")
-        report.append("   from src.visualization import WebDeadlockVisualizer")
-        report.append("   web_viz = WebDeadlockVisualizer(system)")
-        report.append("   web_viz.run_server()")
-        report.append("")
-    
-    # Recommendations
-    report.append("💡 Recommendations:")
-    if not ENHANCED_VISUALIZER_AVAILABLE:
-        report.append("   • Install matplotlib, networkx, numpy for enhanced features")
-    if not WEB_VISUALIZER_AVAILABLE:
-        report.append("   • Install plotly, dash for web dashboard")
-    if not ENHANCED_THEMES_AVAILABLE:
-        report.append("   • Enhanced themes provide accessibility compliance")
-    
-    if sum(FEATURES.values()) == len(FEATURES):
-        report.append("   🎉 All features available - you're ready to go!")
-    
-    report.append("=" * 60)
-    
-    return "\n".join(report)
-
-# Export the report function
-__all__.append('generate_integration_report')
-__all__.append('run_feature_tests')
-
-# =============================================================================
-# FINAL MODULE SETUP
-# =============================================================================
-
-# Ensure all exports are properly defined
-for export_name in __all__:
-    if export_name not in globals():
-        globals()[export_name] = None
-        logging.warning(f"Export '{export_name}' not found in module")
-
-# Module is ready
-if __name__ == "__main__":
-    print(generate_integration_report())
+# Validate installation
+if not CORE_AVAILABLE and not ENHANCED_AVAILABLE:
+    logger.warning("No visualization capabilities available. Install matplotlib and networkx.")
